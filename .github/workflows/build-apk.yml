@@ -1,0 +1,46 @@
+b
+name: Build Tobi Ledger APK
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - name: Setup Android SDK
+        uses: android-actions/setup-android@v3
+
+      - name: Extract Project
+        run: |
+          mkdir project
+          unzip -q Tobi_Ledger_Android_Project.zip -d project
+
+      - name: Build APK
+        run: |
+          GRADLEW=$(find project -name gradlew -type f | head -n 1)
+          if [ -z "$GRADLEW" ]; then
+            echo "Gradle wrapper not found"
+            exit 1
+          fi
+          cd "$(dirname "$GRADLEW")"
+          chmod +x gradlew
+          ./gradlew assembleDebug
+
+      - name: Upload APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: Tobi-Ledger-APK
+          path: project/**/build/outputs/apk/debug/*.apk
